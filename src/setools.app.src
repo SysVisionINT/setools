@@ -1,0 +1,14 @@
+{application, setools,
+	[
+		{description, "SysVision Erlang Tools"},
+		{vsn, "1.0.0"},
+		{modules, [
+			set_email_util
+		]},
+		{registered, []},
+		{applications, [
+			kernel,
+			stdlib
+		]},
+		{env, []}
+	]}.
