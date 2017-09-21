@@ -1,5 +1,5 @@
 %%
-%% SJTools - SysVision Java Tools
+%% SETools - SysVision Erlang Tools
 %% 
 %% Copyright (C) 2017 SysVision - Consultadoria e Desenvolvimento em Sistemas de Informática, Lda.  
 %% 
