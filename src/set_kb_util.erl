@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([get_header/2]).
+-export([get_header/2, get_headers/2]).
 
 get_header(Request, Header) ->
 	{Headers, Request1} = kb_action_helper:get_headers(Request),
@@ -31,3 +31,21 @@ get_header(Request, Header) ->
 		Value when is_binary(Value) -> {ok, Value, Request1};
 		_ -> {invalid, Request1}
 	end.
+
+% Returns an ordered list of the values of the headers. The header value can also be 'missing' or 'invalid'
+get_headers(Request, Headers) ->
+	{RequestHeaders, Request1} = kb_action_helper:get_headers(Request),
+	Results = get_headers(RequestHeaders, Headers, []),
+	{ok, Results, Request1}.
+
+%% ====================================================================
+%% API functions
+%% ====================================================================
+get_headers(_RequestHeaders, [], AccResult) -> lists:reverse(AccResult);
+get_headers(RequestHeaders, [Header|Rest], AccResult) ->
+	HeaderValue = case proplists:get_value(Header, RequestHeaders) of
+		undefined -> missing;
+		Value when is_binary(Value) -> Value;
+		_ -> invalid
+	end,
+	get_headers(RequestHeaders, Rest, [HeaderValue|AccResult]).
