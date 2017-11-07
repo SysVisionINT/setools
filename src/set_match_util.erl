@@ -32,8 +32,10 @@ is_valid_simple_pattern(Pattern) ->
 
 compile_simple_pattern(Pattern) ->
 	% 1. Change * to .* and . to \.
-	Regexp = << (replace_char(Char)) || <<Char>> <= Pattern >>,
-	% 2. Compile the regexp pattern
+	TempRegexp = << (replace_char(Char)) || <<Char>> <= Pattern >>,
+	% 2. Add start and end of line
+	Regexp = <<$^, TempRegexp/binary, $$>>,
+	% 3. Compile the regexp pattern
 	case re:compile(Regexp) of
 		{ok, CompiledPattern} -> {ok, CompiledPattern};
 		Error ->
