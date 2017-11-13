@@ -61,8 +61,8 @@ with_transaction(Connection, Function) ->
 		{ok, [], []} = run_squery(Connection, "COMMIT WORK"),
 		Result
 	catch
-		_:Error ->
-			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ~p", [?MODULE, Error]),
+		Error:Reason ->
+			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ~p:~p~n", [?MODULE, Error, Reason]),
 			run_squery(Connection, "ROLLBACK WORK"),
 			error
 	end.
