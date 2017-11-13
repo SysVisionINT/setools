@@ -17,21 +17,14 @@
 %% License along with this library; if not, write to the Free Software
 %% Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 %%
-{application, setools,
-	[
-		{description, "SysVision Erlang Tools"},
-		{vsn, "1.0.0"},
-		{modules, [
-			set_date_util,
-			set_email_util,
-			set_epgsql_util,
-			set_kb_util,
-			set_match_util
-		]},
-		{registered, []},
-		{applications, [
-			kernel,
-			stdlib
-		]},
-		{env, []}
-	]}.
+-module(set_date_util).
+
+%% ====================================================================
+%% API functions
+%% ====================================================================
+-export([get_current_localtime/0]).
+
+get_current_localtime() ->
+	Timestamp = {_, _, Micro} = erlang:timestamp(),
+	{Date, {Hours, Minutes, Seconds}} = calendar:now_to_local_time(Timestamp),
+	{Date, {Hours, Minutes, (Seconds + (Micro / 1000000))}}.
