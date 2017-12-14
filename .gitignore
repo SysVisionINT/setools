@@ -1,0 +1,6 @@
+/ebin/
+/_build/
+/.rebar/
+/.settings/
+/.project
+/rebar.lock

@@ -63,7 +63,12 @@ with_transaction(Connection, Function) ->
 	catch
 		Error:Reason ->
 			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ~p:~p~n", [?MODULE, Error, Reason]),
-			run_squery(Connection, "ROLLBACK WORK"),
+			try
+				run_squery(Connection, "ROLLBACK WORK")
+			catch
+				Error2:Reason2 ->
+					error_logger:error_msg("~p:with_transaction(..., ...): Error on rollback: ~p:~p~n", [?MODULE, Error2, Reason2])
+			end,
 			error
 	end.
 
