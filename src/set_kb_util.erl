@@ -25,27 +25,25 @@
 -export([get_header/2, get_headers/2]).
 
 get_header(Request, Header) ->
-	{Headers, Request1} = kb_action_helper:get_headers(Request),
-	case proplists:get_value(Header, Headers) of
-		undefined -> {missing, Request1};
-		Value when is_binary(Value) -> {ok, Value, Request1};
-		_ -> {invalid, Request1}
+	Headers = kb_action_helper:get_headers(Request),
+	case maps:find(Header, Headers) of
+		{ok, Content} -> {ok, Content};
+		_ -> missing
 	end.
 
 % Returns an ordered list of the values of the headers. The header value can also be 'missing' or 'invalid'
 get_headers(Request, Headers) ->
-	{RequestHeaders, Request1} = kb_action_helper:get_headers(Request),
+	RequestHeaders = kb_action_helper:get_headers(Request),
 	Results = get_headers(RequestHeaders, Headers, []),
-	{ok, Results, Request1}.
+	{ok, Results}.
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
 get_headers(_RequestHeaders, [], AccResult) -> lists:reverse(AccResult);
 get_headers(RequestHeaders, [Header|Rest], AccResult) ->
-	HeaderValue = case proplists:get_value(Header, RequestHeaders) of
-		undefined -> missing;
-		Value when is_binary(Value) -> Value;
-		_ -> invalid
+	HeaderValue = case maps:find(Header, RequestHeaders) of
+		{ok, Value} -> Value;
+		_ -> missing
 	end,
 	get_headers(RequestHeaders, Rest, [HeaderValue|AccResult]).
