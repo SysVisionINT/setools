@@ -1,7 +1,7 @@
 %%
 %% SETools - SysVision Erlang Tools
 %% 
-%% Copyright (C) 2017 SysVision - Consultadoria e Desenvolvimento em Sistemas de Informática, Lda.  
+%% Copyright (C) 2017-18 SysVision - Consultadoria e Desenvolvimento em Sistemas de Informática, Lda.  
 %% 
 %% This library is free software; you can redistribute it and/or
 %% modify it under the terms of the GNU Lesser General Public
@@ -22,9 +22,23 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([get_current_localtime/0]).
+-export([get_current_localtime/0, localtime_to_iso8601/1, localtime_to_utc/1]).
 
 get_current_localtime() ->
 	Timestamp = {_, _, Micro} = erlang:timestamp(),
 	{Date, {Hours, Minutes, Seconds}} = calendar:now_to_local_time(Timestamp),
 	{Date, {Hours, Minutes, (Seconds + (Micro / 1000000))}}.
+
+localtime_to_iso8601({Date, {Hours, Minutes, Seconds}}) ->
+	TruncatedSeconds = trunc(Seconds),
+	MiliSeconds = Seconds - TruncatedSeconds,
+	{Date2, {Hours2, Minutes2, TruncatedSeconds2}} = localtime_to_utc({Date, {Hours, Minutes, TruncatedSeconds}}),
+	iso8601:format({Date2, {Hours2, Minutes2, TruncatedSeconds2 + MiliSeconds}}).
+
+localtime_to_utc(Localtime) ->
+	case calendar:local_time_to_universal_time_dst(Localtime) of
+		[] -> Localtime;
+		[UTCDST, _UTC] -> UTCDST;
+		[UTC] -> UTC
+	end.
+
