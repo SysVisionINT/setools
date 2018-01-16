@@ -32,6 +32,8 @@
 		{applications, [
 			kernel,
 			stdlib,
+			epgsql,
+			kill_bill,
 			iso8601,
 			jsx
 		]},
