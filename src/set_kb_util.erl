@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([get_header/2, get_headers/2]).
+-export([get_header/2, get_headers/2, get_query_params/1]).
 
 get_header(Request, Header) ->
 	Headers = kb_action_helper:get_headers(Request),
@@ -36,6 +36,10 @@ get_headers(Request, Headers) ->
 	RequestHeaders = kb_action_helper:get_headers(Request),
 	Results = get_headers(RequestHeaders, Headers, []),
 	{ok, Results}.
+
+get_query_params(Request) ->
+	{Args, Request1} = kb_action_helper:get_args(Request),
+	{ok, lists:reverse(Args), Request1}.
 
 %% ====================================================================
 %% API functions
