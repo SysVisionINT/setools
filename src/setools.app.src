@@ -35,7 +35,8 @@
 			epgsql,
 			kill_bill,
 			iso8601,
-			jsx
+			jsx,
+			hex
 		]},
 		{env, []}
 	]}.
