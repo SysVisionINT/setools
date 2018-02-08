@@ -1,7 +1,7 @@
 %%
 %% SETools - SysVision Erlang Tools
 %% 
-%% Copyright (C) 2017 SysVision - Consultadoria e Desenvolvimento em Sistemas de Informática, Lda.  
+%% Copyright (C) 2017-18 SysVision - Consultadoria e Desenvolvimento em Sistemas de Informática, Lda.  
 %% 
 %% This library is free software; you can redistribute it and/or
 %% modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([execute_statement/4, execute_statement/5, with_transaction/2]).
+-export([execute_statement/4, execute_statement/5, with_transaction/2, query/4, query/5, query/6]).
 
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
@@ -72,6 +72,54 @@ with_transaction(Connection, Function) ->
 			error
 	end.
 
+% Sql - string()
+% Parameters - [any()]
+% Connection - epgsql connection
+% Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
+query(Sql, Parameters, Connection, Statements) ->
+	query(Sql, Parameters, 0, Connection, Statements).
+
+% Sql - string()
+% Parameters - [any()]
+% MaxRows - integer() (0 means no limit)
+% Connection - epgsql connection
+% Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
+query(Sql, Parameters, MaxRows, Connection, Statements) ->
+	StatementName = hash(Sql),
+	case get_statement(Connection, StatementName, Sql, Statements) of
+		{Statement, NewStatements} ->
+			case run_bind(Connection, Statement, Parameters) of
+				ok ->
+					case run_execute(Connection, Statement, MaxRows) of
+						{Success, Result} when Success =:= ok orelse Success =:= partial ->
+							{ok, Result, NewStatements};
+						{error, Why} ->
+							error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error executing the prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+							{error, execute_statement, NewStatements}
+					end;
+				{error, Why} ->
+					error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+					{error, binding_parameters, NewStatements}
+			end;
+		Error ->
+			error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Error]),
+			{error, get_statement, Statements}
+	end.
+
+% Sql - string()
+% Parameters - [any()]
+% MaxRows - integer() (0 means no limit)
+% RecordName - atom()
+% Connection - epgsql connection
+% Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
+query(Sql, Parameters, MaxRows, RecordName, Connection, Statements) when is_atom(RecordName) ->
+	case query(Sql, Parameters, MaxRows, Connection, Statements) of
+		{ok, Result, NewStatements} ->
+			Records = [erlang:insert_element(1, Row, RecordName) || Row <- Result],
+			{ok, Records, NewStatements};
+		Error -> Error
+	end.
+
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
@@ -111,3 +159,27 @@ run_squery(Connection, SQL) ->
 			end;
 		Other -> Other
 	end.
+
+run_parse(Connection, Name, Sql) ->
+	case epgsql:parse(Connection, Name, Sql, []) of
+		{error, sync_required} ->
+			case epgsql:sync(Connection) of
+				ok -> run_parse(Connection, Name, Sql);
+				Other -> Other
+			end;
+		{error,{_,_,_,duplicate_prepared_statement,_,_}} ->
+			epgsql:describe(Connection, statement, Name);
+		Other -> Other
+	end.
+
+get_statement(Connection, StatementName, Sql, Statements) ->
+	case proplists:get_value(StatementName, Statements) of
+		undefined ->
+			{ok, Statement} = run_parse(Connection, StatementName, Sql),
+			{Statement, [{StatementName, Statement}|Statements]};
+		Statement ->
+			{Statement, Statements}
+	end.
+
+hash(Str) ->
+	hex:bin_to_hexstr(crypto:hash(md5, Str)).

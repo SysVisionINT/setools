@@ -36,6 +36,7 @@
 			kill_bill,
 			iso8601,
 			jsx,
+			hex,
 			noesis
 		]},
 		{env, []}
