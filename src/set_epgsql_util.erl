@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([execute_statement/4, execute_statement/5, with_transaction/2, query/4, query/6, query/7]).
+-export([execute_statement/4, execute_statement/5, with_transaction/2, execute/4, execute/6, execute/7]).
 
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
@@ -76,8 +76,8 @@ with_transaction(Connection, Function) ->
 % Parameters - [any()]
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
-query(Sql, Parameters, Connection, Statements) ->
-	query(Sql, Parameters, 0, 0, Connection, Statements).
+execute(Sql, Parameters, Connection, Statements) ->
+	execute(Sql, Parameters, 0, 0, Connection, Statements).
 
 % Sql - string()
 % Parameters - [any()]
@@ -85,7 +85,7 @@ query(Sql, Parameters, Connection, Statements) ->
 % Skip - integer()
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
-query(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
+execute(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
 	case append_offset(Sql, Parameters, Skip) of
 		{ok, Sql2, Parameters2} ->
 			StatementName = hash(Sql2),
@@ -101,15 +101,15 @@ query(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
 									{error, execute_statement, NewStatements}
 							end;
 						{error, Why} ->
-							error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+							error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
 							{error, binding_parameters, NewStatements}
 					end;
 				Error ->
-					error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Error]),
+					error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Error]),
 					{error, get_statement, Statements}
 			end;
 		Error ->
-			error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error appending offset to query (~p): ~p~n", [?MODULE, Sql, hash(Sql), Error]),
+			error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error appending offset to query (~p): ~p~n", [?MODULE, Sql, hash(Sql), Error]),
 			{error, append_offset, Statements}
 	end.
 
@@ -120,8 +120,8 @@ query(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
 % RecordName - atom()
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
-query(Sql, Parameters, MaxRows, Skip, RecordName, Connection, Statements) when is_atom(RecordName) ->
-	case query(Sql, Parameters, MaxRows, Skip, Connection, Statements) of
+execute(Sql, Parameters, MaxRows, Skip, RecordName, Connection, Statements) when is_atom(RecordName) ->
+	case execute(Sql, Parameters, MaxRows, Skip, Connection, Statements) of
 		{ok, Result, NewStatements} ->
 			Records = [erlang:insert_element(1, Row, RecordName) || Row <- Result],
 			{ok, Records, NewStatements};
