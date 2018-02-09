@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([execute_statement/4, execute_statement/5, with_transaction/2, query/4, query/5, query/6]).
+-export([execute_statement/4, execute_statement/5, with_transaction/2, query/4, query/6, query/7]).
 
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
@@ -77,43 +77,51 @@ with_transaction(Connection, Function) ->
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
 query(Sql, Parameters, Connection, Statements) ->
-	query(Sql, Parameters, 0, Connection, Statements).
+	query(Sql, Parameters, 0, 0, Connection, Statements).
 
 % Sql - string()
 % Parameters - [any()]
 % MaxRows - integer() (0 means no limit)
+% Skip - integer()
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
-query(Sql, Parameters, MaxRows, Connection, Statements) ->
-	StatementName = hash(Sql),
-	case get_statement(Connection, StatementName, Sql, Statements) of
-		{Statement, NewStatements} ->
-			case run_bind(Connection, Statement, Parameters) of
-				ok ->
-					case run_execute(Connection, Statement, MaxRows) of
-						{Success, Result} when Success =:= ok orelse Success =:= partial ->
-							{ok, Result, NewStatements};
+query(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
+	case append_offset(Sql, Parameters, Skip) of
+		{ok, Sql2, Parameters2} ->
+			StatementName = hash(Sql2),
+			case get_statement(Connection, StatementName, Sql2, Statements) of
+				{Statement, NewStatements} ->
+					case run_bind(Connection, Statement, Parameters2) of
+						ok ->
+							case run_execute(Connection, Statement, MaxRows) of
+								{Success, Result} when Success =:= ok orelse Success =:= partial ->
+									{ok, Result, NewStatements};
+								{error, Why} ->
+									error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error executing the prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+									{error, execute_statement, NewStatements}
+							end;
 						{error, Why} ->
-							error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error executing the prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
-							{error, execute_statement, NewStatements}
+							error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+							{error, binding_parameters, NewStatements}
 					end;
-				{error, Why} ->
-					error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
-					{error, binding_parameters, NewStatements}
+				Error ->
+					error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Error]),
+					{error, get_statement, Statements}
 			end;
 		Error ->
-			error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Error]),
-			{error, get_statement, Statements}
+			error_logger:error_msg("~p:query(~p, ..., ..., ..., ...): Error appending offset to query (~p): ~p~n", [?MODULE, Sql, hash(Sql), Error]),
+			{error, append_offset, Statements}
 	end.
 
 % Sql - string()
 % Parameters - [any()]
 % MaxRows - integer() (0 means no limit)
+% Skip - integer()
 % RecordName - atom()
 % Connection - epgsql connection
 % Statements - [{StatementName - list(), PreparedStatement - epgsql statement}]
-query(Sql, Parameters, MaxRows, RecordName, Connection, Statements) when is_atom(RecordName) ->
-	case query(Sql, Parameters, MaxRows, Connection, Statements) of
+query(Sql, Parameters, MaxRows, Skip, RecordName, Connection, Statements) when is_atom(RecordName) ->
+	case query(Sql, Parameters, MaxRows, Skip, Connection, Statements) of
 		{ok, Result, NewStatements} ->
 			Records = [erlang:insert_element(1, Row, RecordName) || Row <- Result],
 			{ok, Records, NewStatements};
@@ -183,3 +191,10 @@ get_statement(Connection, StatementName, Sql, Statements) ->
 
 hash(Str) ->
 	hex:bin_to_hexstr(crypto:hash(md5, Str)).
+
+append_offset(Sql, Parameters, 0) -> {ok, Sql, Parameters};
+append_offset(Sql, Parameters, Offset) when is_integer(Offset), Offset > 0 ->
+	NewSql = Sql ++ " OFFSET $" ++ erlang:integer_to_list(length(Parameters) + 1),
+	NewParameters = Parameters ++ [Offset],
+	{ok, NewSql, NewParameters};
+append_offset(_Sql, _Parameters, _Offset) -> error.
