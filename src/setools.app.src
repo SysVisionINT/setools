@@ -25,8 +25,12 @@
 			set_date_util,
 			set_email_util,
 			set_epgsql_util,
+			set_gapi_util,
 			set_kb_util,
-			set_match_util
+			set_list_util,
+			set_match_util,
+			set_mnesia_util,
+			set_number_util
 		]},
 		{registered, []},
 		{applications, [
