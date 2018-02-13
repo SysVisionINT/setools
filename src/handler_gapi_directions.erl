@@ -673,18 +673,11 @@ handle_event(end_json, {_Config, Directions}) ->
 	Directions;
 
 % Safe
-handle_event(Event, State) ->
-	%error_logger:info_msg("Event: ~p~n", [Event]),
-	io:format("Event: ~p~n", [Event]),
+handle_event(_Event, State) ->
 	State.
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
-skip(Key, State) ->
-	Current = case State of
-		{_Config, Directions} when is_record(Directions, gapi_directions) -> main;
-		{_Config, Tuple} -> element(1, Tuple)
-	end,
-	io:format("Unknown key ~p. Current state [2]: ~p~n", [Key, Current]), %TODO debug - retirar log e key
+skip(_Key, State) ->
 	{skip, 0, State}.
