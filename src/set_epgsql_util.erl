@@ -155,7 +155,12 @@ run_execute(Connection, Statement, MaxRows) ->
 				ok -> run_execute(Connection, Statement, MaxRows);
 				Other -> Other
 			end;
-		Other -> Other
+		{Success, Result} ->
+			case Statement of
+				{statement, _, Columns, _} when length(Columns) > 0 ->
+					{Success, fix_types(Result, Columns)};
+				_ -> {Success, Result}
+			end
 	end.
 
 run_squery(Connection, SQL) ->
@@ -198,3 +203,14 @@ append_offset(Sql, Parameters, Offset) when is_integer(Offset), Offset > 0 ->
 	NewParameters = Parameters ++ [Offset],
 	{ok, NewSql, NewParameters};
 append_offset(_Sql, _Parameters, _Offset) -> error.
+
+fix_types([], _Columns) -> [];
+fix_types([Row|Rows], Columns) ->
+	RowList = erlang:tuple_to_list(Row),
+	FixedRowList = [fix_type(Type, Elem) || {Elem, {column, _, Type, _, _, _}} <- lists:zip(RowList, Columns)],
+	FixedRow = erlang:list_to_tuple(FixedRowList),
+	[FixedRow|fix_types(Rows, Columns)].
+
+fix_type(numeric, null) -> null;
+fix_type(numeric, Value) when is_binary(Value) -> erlang:binary_to_float(Value);
+fix_type(_Type, Value) -> Value.
