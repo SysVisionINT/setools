@@ -97,19 +97,19 @@ execute(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
 								{Success, Result} when Success =:= ok orelse Success =:= partial ->
 									{ok, Result, NewStatements};
 								{error, Why} ->
-									error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error executing the prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+									error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error executing the prepared statement (~p): ~p~n", [?MODULE, Sql, Parameters, StatementName, Why]),
 									{error, execute_statement, NewStatements}
 							end;
 						{error, Why} ->
-							error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Why]),
+							error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, Parameters, StatementName, Why]),
 							{error, binding_parameters, NewStatements}
 					end;
 				Error ->
-					error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, StatementName, Error]),
+					error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, Parameters, StatementName, Error]),
 					{error, get_statement, Statements}
 			end;
 		Error ->
-			error_logger:error_msg("~p:execute(~p, ..., ..., ..., ...): Error appending offset to query (~p): ~p~n", [?MODULE, Sql, hash(Sql), Error]),
+			error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error appending offset to query (~p): ~p~n", [?MODULE, Sql, Parameters, hash(Sql), Error]),
 			{error, append_offset, Statements}
 	end.
 
