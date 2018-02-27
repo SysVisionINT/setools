@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([get_current_localtime/0, localtime_to_iso8601/1, localtime_to_utc/1, parse_iso8601_date/1]).
+-export([get_current_localtime/0, localtime_to_iso8601/1, localtime_to_utc/1, parse_iso8601_date/1, date_to_iso8601/1]).
 
 get_current_localtime() ->
 	Timestamp = {_, _, Micro} = erlang:timestamp(),
@@ -55,3 +55,18 @@ parse_iso8601_date(<<BinYear:4/binary, Sep:1/binary, BinMonth:2/binary, Sep:1/bi
 	parse_iso8601_date(<<BinYear/binary, BinMonth/binary, BinDay/binary>>);
 parse_iso8601_date(_) -> nok.
 
+date_to_iso8601({Year, Month, Day}) ->
+	BinYear = integer_to_binary(Year),
+	BinMonth = integer_to_binary(Month),
+	BinDay = integer_to_binary(Day),
+	PaddedBinMonth =
+		if
+			Month >= 10 -> BinMonth;
+			Month < 10 -> << <<"0">>/binary, BinMonth/binary >>
+		end,
+	PaddedBinDay =
+		if
+			Day >= 10 -> BinDay;
+			Day < 10 -> << <<"0">>/binary, BinDay/binary >>
+		end,
+	<< BinYear/binary, <<"-">>/binary, PaddedBinMonth/binary, <<"-">>/binary, PaddedBinDay/binary >>.
