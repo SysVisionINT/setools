@@ -62,7 +62,8 @@ with_transaction(Connection, Function) ->
 		Result
 	catch
 		Error:Reason ->
-			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ~p:~p~n", [?MODULE, Error, Reason]),
+			Trace = erlang:get_stacktrace(),
+			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ~p:~p:~p~n", [?MODULE, Trace, Error, Reason]),
 			try
 				run_squery(Connection, "ROLLBACK WORK")
 			catch
