@@ -40,15 +40,15 @@ execute_statement(Connection, Statements, StatementName, Parameters, MaxRows) ->
 					case run_execute(Connection, Statement, MaxRows) of
 						{Success, Result} when Success =:= ok orelse Success =:= partial -> {ok, Result};
 						{error, Why} ->
-							error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~w, ...): Error executing the prepared statement: ~w~n", [?MODULE, StatementName, Parameters, Why]),
+							error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~p, ...): Error executing the prepared statement: ~p~n", [?MODULE, StatementName, Parameters, Why]),
 							{error, execute_statement}
 					end;
 				{error, Why} ->
-					error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~w, ...): Error binding parameters: ~w~n", [?MODULE, StatementName, Parameters, Why]),
+					error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~p, ...): Error binding parameters: ~p~n", [?MODULE, StatementName, Parameters, Why]),
 					{error, binding_parameters}
 			end;
 		_Error ->
-			error_logger:error_msg("~p:execute_statement(..., ~w, ~p, ..., ...): Prepared statement not found", [?MODULE, Statements, StatementName]),
+			error_logger:error_msg("~p:execute_statement(..., ~p, ~p, ..., ...): Prepared statement not found", [?MODULE, Statements, StatementName]),
 			{error, statement_not_found}
 	end.
 
@@ -63,12 +63,12 @@ with_transaction(Connection, Function) ->
 	catch
 		Error:Reason ->
 			Trace = erlang:get_stacktrace(),
-			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ~w:~w:~w~n", [?MODULE, Trace, Error, Reason]),
+			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ERROR ~p:~p~nTRACE: ~p~n", [?MODULE, Error, Reason, Trace]),
 			try
 				run_squery(Connection, "ROLLBACK WORK")
 			catch
 				Error2:Reason2 ->
-					error_logger:error_msg("~p:with_transaction(..., ...): Error on rollback: ~w:~w~n", [?MODULE, Error2, Reason2])
+					error_logger:error_msg("~p:with_transaction(..., ...): Error on rollback: ~p:~p~n", [?MODULE, Error2, Reason2])
 			end,
 			error
 	end.
@@ -98,19 +98,19 @@ execute(Sql, Parameters, MaxRows, Skip, Connection, Statements) ->
 								{Success, Result} when Success =:= ok orelse Success =:= partial ->
 									{ok, Result, NewStatements};
 								{error, Why} ->
-									error_logger:error_msg("~p:execute(~p, ~w, ..., ..., ..., ...): Error executing the prepared statement (~p): ~w~n", [?MODULE, Sql, Parameters, StatementName, Why]),
+									error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error executing the prepared statement (~p): ~p~n", [?MODULE, Sql, Parameters, StatementName, Why]),
 									{error, execute_statement, NewStatements}
 							end;
 						{error, Why} ->
-							error_logger:error_msg("~p:execute(~p, ~w, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~w~n", [?MODULE, Sql, Parameters, StatementName, Why]),
+							error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error binding parameters to prepared statement (~p): ~p~n", [?MODULE, Sql, Parameters, StatementName, Why]),
 							{error, binding_parameters, NewStatements}
 					end;
 				Error ->
-					error_logger:error_msg("~p:execute(~p, ~w, ..., ..., ..., ...): Error getting prepared statement (~p): ~w~n", [?MODULE, Sql, Parameters, StatementName, Error]),
+					error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error getting prepared statement (~p): ~p~n", [?MODULE, Sql, Parameters, StatementName, Error]),
 					{error, get_statement, Statements}
 			end;
 		Error ->
-			error_logger:error_msg("~p:execute(~p, ~w, ..., ..., ..., ...): Error appending offset to query (~p): ~w~n", [?MODULE, Sql, Parameters, hash(Sql), Error]),
+			error_logger:error_msg("~p:execute(~p, ~p, ..., ..., ..., ...): Error appending offset to query (~p): ~p~n", [?MODULE, Sql, Parameters, hash(Sql), Error]),
 			{error, append_offset, Statements}
 	end.
 
