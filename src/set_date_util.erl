@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([get_current_localtime/0, localtime_to_iso8601/1, localtime_to_utc/1, parse_iso8601_date/1, date_to_iso8601/1]).
+-export([get_current_localtime/0, localtime_to_iso8601/1, localtime_to_utc/1, parse_iso8601_date/1, date_to_iso8601/1, difference/2]).
 
 get_current_localtime() ->
 	Timestamp = {_, _, Micro} = erlang:timestamp(),
@@ -70,3 +70,8 @@ date_to_iso8601({Year, Month, Day}) ->
 			Day < 10 -> << <<"0">>/binary, BinDay/binary >>
 		end,
 	<< BinYear/binary, <<"-">>/binary, PaddedBinMonth/binary, <<"-">>/binary, PaddedBinDay/binary >>.
+
+difference({{Y1, M1, D1}, {H1, Min1, S1}}, {{Y2, M2, D2}, {H2, Min2, S2}}) ->
+	Date1 = {{Y1, M1, D1}, {H1, Min1, round(S1)}},
+	Date2 = {{Y2, M2, D2}, {H2, Min2, round(S2)}},
+	calendar:datetime_to_gregorian_seconds(Date1) - calendar:datetime_to_gregorian_seconds(Date2).
