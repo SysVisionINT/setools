@@ -40,11 +40,13 @@ execute_statement(Connection, Statements, StatementName, Parameters, MaxRows) ->
 					case run_execute(Connection, Statement, MaxRows) of
 						{Success, Result} when Success =:= ok orelse Success =:= partial -> {ok, Result};
 						{error, Why} ->
-							error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~p, ...): Error executing the prepared statement: ~p~n", [?MODULE, StatementName, Parameters, Why]),
+							error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~p, ...): Error executing the prepared statement: ~p~n",
+							                       [?MODULE, StatementName, Parameters, Why]),
 							{error, execute_statement}
 					end;
 				{error, Why} ->
-					error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~p, ...): Error binding parameters: ~p~n", [?MODULE, StatementName, Parameters, Why]),
+					error_logger:error_msg("~p:execute_statement(..., ..., ~p, ~p, ...): Error binding parameters: ~p~n",
+					                       [?MODULE, StatementName, Parameters, Why]),
 					{error, binding_parameters}
 			end;
 		_Error ->
@@ -65,7 +67,8 @@ with_transaction(Connection, Function) ->
 			Trace = erlang:get_stacktrace(),
 			error_logger:error_msg("~p:with_transaction(..., ...): Transaction rollback: ERROR ~p:~p~nTRACE: ~p~n", [?MODULE, Error, Reason, Trace]),
 			try
-				run_squery(Connection, "ROLLBACK WORK")
+				RollbackResult = run_squery(Connection, "ROLLBACK WORK"),
+				error_logger:error_msg("~p:with_transaction(..., ...): Rollback result: ~p~n", [?MODULE, RollbackResult])
 			catch
 				Error2:Reason2 ->
 					error_logger:error_msg("~p:with_transaction(..., ...): Error on rollback: ~p:~p~n", [?MODULE, Error2, Reason2])
