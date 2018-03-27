@@ -177,15 +177,20 @@ run_squery(Connection, SQL) ->
 		Other -> Other
 	end.
 
-run_parse(Connection, Name, Sql) ->
-	case epgsql:parse(Connection, Name, Sql, []) of
+run_equery(Connection, SQL, Parameters) ->
+	case epgsql:equery(Connection, SQL, Parameters) of
 		{error, sync_required} ->
 			case epgsql:sync(Connection) of
-				ok -> run_parse(Connection, Name, Sql);
+				ok -> run_equery(Connection, SQL, Parameters);
 				Other -> Other
 			end;
-		{error,{_,_,_,duplicate_prepared_statement,_,_}} ->
-			epgsql:describe(Connection, statement, Name);
+		Other -> Other
+	end.
+
+run_parse(Connection, Name, Sql) ->
+	case run_equery(Connection, "SELECT COUNT(*) FROM pg_prepared_statements WHERE name = $1", [Name]) of
+		{ok, _, [{0}]} -> epgsql:parse(Connection, Name, Sql, []);
+		{ok, _, [{1}]} -> epgsql:describe(Connection, statement, Name);
 		Other -> Other
 	end.
 
