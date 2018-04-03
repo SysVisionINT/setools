@@ -23,6 +23,7 @@
 %% API functions
 %% ====================================================================
 -export([get_current_localtime/0, localtime_to_iso8601/1, localtime_to_utc/1, parse_iso8601_date/1, date_to_iso8601/1, difference/2]).
+-export([iso8601_to_localtime/1]).
 
 get_current_localtime() ->
 	Timestamp = {_, _, Micro} = erlang:timestamp(),
@@ -34,6 +35,13 @@ localtime_to_iso8601({Date, {Hours, Minutes, Seconds}}) ->
 	MiliSeconds = Seconds - TruncatedSeconds,
 	{Date2, {Hours2, Minutes2, TruncatedSeconds2}} = localtime_to_utc({Date, {Hours, Minutes, TruncatedSeconds}}),
 	iso8601:format({Date2, {Hours2, Minutes2, TruncatedSeconds2 + MiliSeconds}}).
+
+iso8601_to_localtime(Iso8601) ->
+	try iso8601:parse(Iso8601) of
+		UTC -> {ok, calendar:universal_time_to_local_time(UTC)}
+	catch
+		error:badarg -> nok
+	end.
 
 localtime_to_utc(Localtime) ->
 	case calendar:local_time_to_universal_time_dst(Localtime) of
