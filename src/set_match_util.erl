@@ -39,7 +39,7 @@ compile_simple_pattern(Pattern) ->
 	case re:compile(Regexp) of
 		{ok, CompiledPattern} -> {ok, CompiledPattern};
 		Error ->
-			error_logger:error_msg("~p:compile_simple_pattern(~p): Error compiling pattern ~p: ~p", [?MODULE, Pattern, Regexp, Error]),
+			error_logger:error_msg("~p:compile_simple_pattern(~p): Error compiling pattern ~p: ~p~n", [?MODULE, Pattern, Regexp, Error]),
 			error
 	end.
 
