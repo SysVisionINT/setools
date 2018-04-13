@@ -19,6 +19,8 @@
 %%
 -module(set_epgsql_util).
 
+-include_lib("epgsql/include/epgsql.hrl").
+
 %% ====================================================================
 %% API functions
 %% ====================================================================
@@ -161,7 +163,7 @@ run_execute(Connection, Statement, MaxRows) ->
 			end;
 		{Success, Result} ->
 			case Statement of
-				{statement, _, Columns, _} when length(Columns) > 0 ->
+				#statement{columns=Columns} when length(Columns) > 0 ->
 					{Success, fix_types(Result, Columns)};
 				_ -> {Success, Result}
 			end
@@ -216,7 +218,7 @@ append_offset(_Sql, _Parameters, _Offset) -> error.
 fix_types([], _Columns) -> [];
 fix_types([Row|Rows], Columns) ->
 	RowList = erlang:tuple_to_list(Row),
-	FixedRowList = [fix_type(Type, Elem) || {Elem, {column, _, Type, _, _, _}} <- lists:zip(RowList, Columns)],
+	FixedRowList = [fix_type(Type, Elem) || {Elem, #column{type=Type}} <- lists:zip(RowList, Columns)],
 	FixedRow = erlang:list_to_tuple(FixedRowList),
 	[FixedRow|fix_types(Rows, Columns)].
 
