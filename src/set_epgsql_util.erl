@@ -220,6 +220,6 @@ fix_types([Row|Rows], Columns) ->
 	FixedRow = erlang:list_to_tuple(FixedRowList),
 	[FixedRow|fix_types(Rows, Columns)].
 
-fix_type(numeric, null) -> null;
 fix_type(numeric, Value) when is_binary(Value) -> erlang:binary_to_float(Value);
+fix_type({_, 1700}, Value) when is_binary(Value) -> erlang:binary_to_float(Value); % Numeric on epgsql 4.0
 fix_type(_Type, Value) -> Value.
