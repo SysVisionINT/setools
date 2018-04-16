@@ -30,15 +30,13 @@ get_current_localtime() ->
 	{Date, {Hours, Minutes, Seconds}} = calendar:now_to_local_time(Timestamp),
 	{Date, {Hours, Minutes, (Seconds + (Micro / 1000000))}}.
 
-localtime_to_iso8601({Date, {Hours, Minutes, Seconds}}) ->
-	TruncatedSeconds = trunc(Seconds),
-	MiliSeconds = Seconds - TruncatedSeconds,
-	{Date2, {Hours2, Minutes2, TruncatedSeconds2}} = localtime_to_utc({Date, {Hours, Minutes, TruncatedSeconds}}),
-	iso8601:format({Date2, {Hours2, Minutes2, TruncatedSeconds2 + MiliSeconds}}).
+localtime_to_iso8601(Localtime) ->
+	UTC = convert(Localtime, fun localtime_to_utc/1),
+	iso8601:format(UTC).
 
 iso8601_to_localtime(Iso8601) ->
-	try iso8601:parse(Iso8601) of
-		UTC -> {ok, calendar:universal_time_to_local_time(UTC)}
+	try iso8601:parse_exact(Iso8601) of
+		UTC -> {ok, convert(UTC, fun calendar:universal_time_to_local_time/1)}
 	catch
 		error:badarg -> nok
 	end.
@@ -83,3 +81,12 @@ difference({{Y1, M1, D1}, {H1, Min1, S1}}, {{Y2, M2, D2}, {H2, Min2, S2}}) ->
 	Date1 = {{Y1, M1, D1}, {H1, Min1, round(S1)}},
 	Date2 = {{Y2, M2, D2}, {H2, Min2, round(S2)}},
 	calendar:datetime_to_gregorian_seconds(Date1) - calendar:datetime_to_gregorian_seconds(Date2).
+
+%% ====================================================================
+%% Internal functions
+%% ====================================================================
+convert({PDate, {PHours, PMinutes, PSeconds}}, ConvertFun) ->
+	TruncatedSeconds = trunc(PSeconds),
+	MiliSeconds = PSeconds - TruncatedSeconds,
+	{RDate, {RHours, RMinutes, RSeconds}} = ConvertFun({PDate, {PHours, PMinutes, TruncatedSeconds}}),
+	{RDate, {RHours, RMinutes, RSeconds + MiliSeconds}}.
