@@ -22,11 +22,15 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([split/2]).
+-export([split/2, index_of/2]).
 
 split(List, Size) when is_list(List) andalso is_integer(Size) andalso Size > 0 ->
 	inner_split(List, Size);
 split(_, _) ->
+	error.
+
+index_of(Value, List) when is_list(List) -> index_of(Value, List, 1);
+index_of(_, _) ->
 	error.
 
 %% ====================================================================
@@ -45,3 +49,7 @@ inner_split(List, Size, Size, Acc, GlobalAcc) ->
 	inner_split(List, Size, 0, [], [lists:reverse(Acc)|GlobalAcc]);
 inner_split([Element|Rest], Size, Count, Acc, GlobalAcc) ->
 	inner_split(Rest, Size, Count + 1, [Element|Acc], GlobalAcc).
+
+index_of(_, [], _) -> not_found;
+index_of(Value, [Value|_], Index) -> Index;
+index_of(Value, [_|Rest], Index) -> index_of(Value, Rest, Index + 1).
