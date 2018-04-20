@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([round_float/2, integer_to_bin/2, bin_to_integer/2, get_integer_from_digits_list/2]).
+-export([round_float/2, integer_to_bin/2, bin_to_integer/2, get_integer_from_digits_list/2, pow/2]).
 
 % http://www.codecodex.com/wiki/Round_a_number_to_a_specific_decimal_place#Erlang
 round_float(Value, DecimalPlaces) when is_float(Value) andalso is_integer(DecimalPlaces) ->
@@ -46,9 +46,14 @@ get_integer_from_digits_list(List, Base) when is_list(List) ->
 		NewAcc = Digit * Multiplier + Acc,
 		{Multiplier div Base, NewAcc}
 	end,
-	StartMultiplier = trunc(math:pow(Base, length(List) - 1)),
+	StartMultiplier = pow(Base, length(List) - 1),
 	{0, FinalInteger} = lists:foldl(Fun, {StartMultiplier, 0}, List),
 	FinalInteger.
+
+pow(X, Y) when Y < 0 ->
+    1/pow(X, -Y);
+pow(X, Y) when is_integer(Y) ->
+    pow(X, Y, 1).
 
 %% ====================================================================
 %% Internal functions
@@ -68,3 +73,9 @@ bin_to_integer(<<>>, Alphabet, Acc) ->
 bin_to_integer(<<Char:8, Rest/binary>>, Alphabet, Acc) ->
 	Index = set_list_util:index_of(Char, Alphabet),
 	bin_to_integer(Rest, Alphabet, [Index - 1|Acc]). % We subtract one because erlang indexes start at 1
+
+pow(_, 0, B) ->
+    B;
+pow(X, Y, B) ->
+    B2 = if Y rem 2 =:= 0 -> B; true -> X * B end,
+    pow(X * X, Y div 2, B2).
