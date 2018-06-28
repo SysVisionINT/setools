@@ -53,7 +53,10 @@ parse_iso8601_date(<<BinYear:4/binary, BinMonth:2/binary, BinDay:2/binary>>) ->
 		IntYear = erlang:binary_to_integer(BinYear),
 		IntMonth = erlang:binary_to_integer(BinMonth),
 		IntDay = erlang:binary_to_integer(BinDay),
-		{ok, {IntYear, IntMonth, IntDay}}
+		case calendar:valid_date({IntYear, IntMonth, IntDay}) of
+			true -> {ok, {IntYear, IntMonth, IntDay}};
+			_ -> nok
+		end
 	catch
 		error:badarg -> nok
 	end;
