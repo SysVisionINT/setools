@@ -21,6 +21,9 @@
 
 -include("set_gapi_constants.hrl").
 
+-define(URL_ENCODED_COLON, "%3A").
+-define(URL_ENCODED_PIPE,  "%7C").
+
 %% ====================================================================
 %% Types
 %% ====================================================================
@@ -237,16 +240,16 @@ encode_location(Other) ->
 
 encode_points(Points) when is_list(Points) ->
 	EncodedPoints = [encode_point(Point) || Point <- Points],
-	string:join(EncodedPoints, "|"). %TODO ver alternativa para isto
+	string:join(EncodedPoints, ?URL_ENCODED_PIPE). %TODO ver alternativa para isto
 
 encode_locations(Locations) when is_list(Locations) ->
 	EncodedLocations = [encode_location(Location) || Location <- Locations],
-	string:join(EncodedLocations, "|"). %TODO ver alternativa para isto
+	string:join(EncodedLocations, ?URL_ENCODED_PIPE). %TODO ver alternativa para isto
 
 encode_waypoints(undefined, _Optimize) -> [];
 encode_waypoints([], _Optimize) -> [];
 encode_waypoints(Waypoints, Optimize) ->
-	["&waypoints=optimize:", atom_to_list(Optimize), $|, encode_locations(Waypoints)].
+	["&waypoints=optimize", ?URL_ENCODED_COLON, atom_to_list(Optimize), ?URL_ENCODED_PIPE, encode_locations(Waypoints)].
 
 encode_components(undefined) -> [];
 encode_components(Components) when is_list(Components) ->
@@ -256,8 +259,8 @@ encode_components([], []) -> [];
 encode_components([], [_|Components]) -> % The first element is |
 	["&components=", Components];
 encode_components([{Key, Value}|Rest], Acc) ->
-	Component = [encode_value(Key), $:, encode_value(Value)],
-	encode_components(Rest, [$|, Component|Acc]).
+	Component = [encode_value(Key), ?URL_ENCODED_COLON, encode_value(Value)],
+	encode_components(Rest, [?URL_ENCODED_PIPE, Component|Acc]).
 
 % Calculate the total distance of a list of coordinates
 calculate_distance([]) -> 0;
@@ -280,7 +283,7 @@ encode_config([{Key, Value}|Rest], Acc) ->
 
 encode_config_value(Key, Values) when (Key =:= result_type orelse Key =:= location_type) andalso is_list(Values) ->
 	EncodedValues = [encode_value(Value) || Value <- Values],
-	string:join(EncodedValues, "|");
+	string:join(EncodedValues, ?URL_ENCODED_PIPE);
 encode_config_value(_Key, {NE, SW}) ->
 	EncodedNE = [$, | encode_point(NE)],
 	EncodedSW = encode_point(SW),
