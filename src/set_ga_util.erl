@@ -22,16 +22,23 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([run_ordered_chromosome_ga/7]).
+-export([run_ordered_chromosome_ga/7, run_ordered_chromosome_ga/8]).
 
 run_ordered_chromosome_ga(Genes, FitnessFunction, PopulationSize, StagnationRuns, ElitismRatio, TournmentSize, MutationProbability) ->
 	Population = generate_population(PopulationSize, Genes, FitnessFunction),
-	{Fitness, Solution} = converge(Population, StagnationRuns, ElitismRatio, TournmentSize, MutationProbability, FitnessFunction),
-	{ok, Solution, Fitness}.
+	run_ordered_chromosome_ga(FitnessFunction, Population, StagnationRuns, ElitismRatio, TournmentSize, MutationProbability).
+
+run_ordered_chromosome_ga(Genes, FitnessFunction, PopulationSize, InitialPopulationFunction, StagnationRuns, ElitismRatio, TournmentSize,
+                          MutationProbability) ->
+	Population = InitialPopulationFunction(PopulationSize, Genes, FitnessFunction),
+	run_ordered_chromosome_ga(FitnessFunction, Population, StagnationRuns, ElitismRatio, TournmentSize, MutationProbability).
 
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
+run_ordered_chromosome_ga(FitnessFunction, Population, StagnationRuns, ElitismRatio, TournmentSize, MutationProbability) ->
+	{Fitness, Solution} = converge(Population, StagnationRuns, ElitismRatio, TournmentSize, MutationProbability, FitnessFunction),
+	{ok, Solution, Fitness}.
 
 generate_population(Size, Genes, FitnessFunc) when Size >= 0 ->
 	generate_population(Size, Genes, FitnessFunc, []).
