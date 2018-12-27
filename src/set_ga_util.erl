@@ -46,7 +46,7 @@ generate_population(Size, Genes, FitnessFunc) when Size >= 0 ->
 generate_population(0, _Genes, _FitnessFunc, Population) ->
 	Population;
 generate_population(Size, Genes, FitnessFunc, Population) ->
-	Chromosome = shuffle(Genes),
+	Chromosome = set_list_util:shuffle(Genes),
 	Fitness = FitnessFunc(Chromosome),
 	generate_population(Size - 1, Genes, FitnessFunc, [{Fitness, Chromosome}|Population]).
 
@@ -147,9 +147,6 @@ get_most_fit(Population) ->
 elitism(Population, Ratio) ->
 	Size = round(length(Population) * Ratio),
 	lists:sublist(lists:reverse(lists:sort(Population)), Size).
-
-shuffle(List) ->
-	[X || {_, X} <- lists:sort([{rand:uniform(), N} || N <- List])].
 
 swap(List, Idx, Idx) -> List;
 swap(List, Idx1, Idx2) ->

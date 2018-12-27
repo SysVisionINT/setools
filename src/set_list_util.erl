@@ -22,7 +22,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([split/2, index_of/2]).
+-export([split/2, index_of/2, shuffle/1]).
 
 split(List, Size) when is_list(List) andalso is_integer(Size) andalso Size > 0 ->
 	inner_split(List, Size);
@@ -31,6 +31,11 @@ split(_, _) ->
 
 index_of(Value, List) when is_list(List) -> index_of(Value, List, 1);
 index_of(_, _) ->
+	error.
+
+shuffle(List) when is_list(List) ->
+	[X || {_, X} <- lists:sort([{rand:uniform(), N} || N <- List])];
+shuffle(_) ->
 	error.
 
 %% ====================================================================
